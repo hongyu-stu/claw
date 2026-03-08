@@ -28,7 +28,7 @@ git config --global user.email "你在GitHub绑定的邮箱"
 在项目目录 `C:\Users\Administrator\Desktop\claw` 下执行：
 
 ```powershell
-git remote add origin https://github.com/ALEXCHY/claw.git
+git remote add origin https://github.com/hongyu-stu/claw.git
 git add .
 git commit -m "Initial commit: claw project with skills and scripts"
 git branch -M main
@@ -40,7 +40,7 @@ git push -u origin main
 - **HTTPS**：会弹出浏览器或要求输入用户名 + **Personal Access Token (PAT)**（不再用密码）。  
   - 创建 PAT：GitHub → Settings → Developer settings → Personal access tokens → Generate new token，勾选 `repo`。
 - **SSH**：若已配置 SSH key，可改用  
-  `git remote set-url origin git@github.com:ALEXCHY/claw.git`  
+  `git remote set-url origin git@github.com:hongyu-stu/claw.git`  
   再执行 `git push -u origin main`。
 
 ## 5. 在 Cursor 里使用 Git
