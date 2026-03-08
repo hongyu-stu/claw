@@ -1,0 +1,11 @@
+# 环境与密钥（切勿提交）
+.env
+.env.local
+.env.*.local
+
+# 常见本地/生成目录
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/

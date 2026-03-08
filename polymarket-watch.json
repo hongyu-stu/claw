@@ -1,0 +1,16 @@
+{
+  "thresholdPct": 5,
+  "markets": [
+    {"slug": "us-x-iran-ceasefire-by-march-6", "label": "US×Iran 停火 03/06"},
+    {"slug": "us-x-iran-ceasefire-by-march-15", "label": "US×Iran 停火 03/15"},
+    {"slug": "us-x-iran-ceasefire-by-march-31", "label": "US×Iran 停火 03/31"},
+    {"slug": "us-x-iran-ceasefire-by-april-30", "label": "US×Iran 停火 04/30"},
+    {"slug": "will-crude-oil-cl-hit-by-end-of-march", "label": "原油(CL) 3月底价格预测"}
+  ],
+  "discover": {
+    "enabled": true,
+    "topN": 25,
+    "thresholdPct": 5
+  },
+  "feishuWebhookUrl": ""
+}
