@@ -291,20 +291,37 @@ async function run() {
     .map((x) => ({ ...x, relatedAssets: getRelatedAssets(x.question) }))
     .sort((a, b) => Math.abs(Number(b.movePct)) - Math.abs(Number(a.movePct)));
 
-  /** 投资相关 Top10：每个 event（同 slug）最多保留 2 条（按当前 Yes 取前二），再按异动排序取前 10 */
-  const bySlug = new Map();
+  /**
+   * 同一事件的分组 key：避免「原油 $100/$105/$110」等不同 slug 刷屏。
+   * - 含 " — " 时取前半（事件标题）；否则去掉末尾 ": ↑ $105"、(HIGH)、(LOW)、" $数字" 等后缀。
+   */
+  function getEventGroupKey(row) {
+    const q = (row.question || '').trim();
+    const lastDash = q.lastIndexOf(' — ');
+    if (lastDash > 0) return q.slice(0, lastDash).trim();
+    const stripSuffix = q
+      .replace(/\s*[:\—]\s*[↑↓]?\s*\$?\d+(\.\d+)?(\s*\((HIGH|LOW)\))?\s*$/i, '')
+      .replace(/\s*\((HIGH|LOW)\)\s*$/i, '')
+      .replace(/\s+\$[\d.]+\s*$/i, '')
+      .trim();
+    if (stripSuffix.length >= 2) return stripSuffix;
+    return q || row.slug || '';
+  }
+
+  /** 投资相关 Top10：按事件组 key 去重，每组最多 2 条（按当前 Yes 取前二），再按异动排序取前 10 */
+  const byEventKey = new Map();
   for (const row of investmentRelated) {
-    const s = row.slug || row.question;
-    if (!bySlug.has(s)) bySlug.set(s, [row]);
+    const key = getEventGroupKey(row);
+    if (!byEventKey.has(key)) byEventKey.set(key, [row]);
     else {
-      const arr = bySlug.get(s);
+      const arr = byEventKey.get(key);
       arr.push(row);
       arr.sort((a, b) => Number(b.closePct) - Number(a.closePct));
       if (arr.length > 2) arr.pop();
     }
   }
   const upToTwoPerEvent = [];
-  for (const arr of bySlug.values()) upToTwoPerEvent.push(...arr);
+  for (const arr of byEventKey.values()) upToTwoPerEvent.push(...arr);
   upToTwoPerEvent.sort((a, b) => Math.abs(Number(b.movePct)) - Math.abs(Number(a.movePct)));
   const hotMoversInvestmentRelated = upToTwoPerEvent.slice(0, 10);
 

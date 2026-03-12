@@ -2,6 +2,9 @@
  * 将当日每日简报（总结 + 完整 MD）推送到飞书 Webhook
  * 用法: node feishu_push_briefing.js [--date YYYY-MM-DD]
  * 依赖: 环境变量 FEISHU_WEBHOOK_URL；workspace 下已有 daily_briefing_summary_*.txt 与 daily_briefing_full_*.md
+ *
+ * 推送策略：总结单条发送；完整 MD 按 ## 分段发送，避免单条过长、纯文本 Markdown 难以阅读。
+ * 飞书 Webhook text 类型不渲染 Markdown，表格等会以纯文本显示。
  */
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +17,9 @@ if (!webhookUrl.trim()) {
   console.error('未配置 FEISHU_WEBHOOK_URL，无法推送');
   process.exit(1);
 }
+
+/** 单条消息建议不超过 4KB，避免飞书截断或限流 */
+const MAX_CHUNK = 3800;
 
 function getDateArg() {
   const i = process.argv.indexOf('--date');
@@ -48,6 +54,39 @@ async function sendToFeishu(text) {
   if (!res.ok) throw new Error(`Feishu webhook ${res.status}: ${await res.text()}`);
 }
 
+/**
+ * 按 ## 标题切分 MD，每块不超过 MAX_CHUNK 字符；返回字符串数组
+ */
+function splitFullMd(fullMd) {
+  const sections = [];
+  const re = /^##\s+/m;
+  let lastEnd = 0;
+  let match;
+  const line = (s) => s.trimEnd();
+  while ((match = re.exec(fullMd)) !== null) {
+    if (match.index > lastEnd) {
+      const block = line(fullMd.slice(lastEnd, match.index));
+      if (block) sections.push(block);
+    }
+    lastEnd = match.index;
+  }
+  if (lastEnd < fullMd.length) {
+    const block = line(fullMd.slice(lastEnd));
+    if (block) sections.push(block);
+  }
+  const out = [];
+  for (const s of sections) {
+    if (s.length <= MAX_CHUNK) {
+      out.push(s);
+    } else {
+      for (let i = 0; i < s.length; i += MAX_CHUNK) {
+        out.push(s.slice(i, i + MAX_CHUNK));
+      }
+    }
+  }
+  return out;
+}
+
 async function main() {
   const date = getDateArg();
   const summaryPath = path.join(WORKSPACE, `daily_briefing_summary_${date}.txt`);
@@ -79,8 +118,12 @@ async function main() {
     console.log('已推送：100 字总结');
   }
   if (fullMd) {
-    await sendToFeishu(fullMd);
-    console.log('已推送：完整报告');
+    const chunks = splitFullMd(fullMd);
+    for (let i = 0; i < chunks.length; i++) {
+      await sendToFeishu(chunks[i]);
+      if (chunks.length > 1) await new Promise((r) => setTimeout(r, 300));
+    }
+    console.log(`已推送：完整报告（${chunks.length} 条）`);
   }
   console.log('飞书推送完成');
 }

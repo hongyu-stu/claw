@@ -4,6 +4,7 @@
 .env.*.local
 
 # 常见本地/生成目录
+_tmp_skills/
 node_modules/
 __pycache__/
 *.pyc
